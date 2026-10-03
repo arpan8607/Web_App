@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MongoDB CRUD App</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 500px; }
+    input, button { padding: 8px; margin: 5px 0; }
+    li { margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h2>Add a User</h2>
+  <input type="text" id="nameInput" placeholder="Enter name">
+  <button onclick="createUser()">Save User</button>
+
+  <h2>User List</h2>
+  <ul id="userList"></ul>
+
+  <script>
+    const API_URL = 'http://localhost:3000/api/users';
+
+    // READ: Fetch users and display them (Now with an Edit button)
+    async function fetchUsers() {
+      const res = await fetch(API_URL);
+      const users = await res.json();
+      const list = document.getElementById('userList');
+      list.innerHTML = '';
+      users.forEach(user => {
+        list.innerHTML += `<li>
+          ${user.name} 
+          <button onclick="editUser('${user._id}', '${user.name}')">Edit</button>
+          <button onclick="deleteUser('${user._id}')">Delete</button>
+        </li>`;
+      });
+    }
+
+    // CREATE: Send a new user to your database
+    async function createUser() {
+      const name = document.getElementById('nameInput').value;
+      if (!name) return alert("Please enter a name");
+
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      document.getElementById('nameInput').value = '';
+      fetchUsers(); 
+    }
+
+    // UPDATE: Ask for a new name and modify the user in the database
+    async function editUser(id, currentName) {
+      // A simple browser prompt to type the new name
+      const newName = prompt("Update user name:", currentName);
+      
+      // Only update if they typed something new
+      if (newName && newName !== currentName) {
+        await fetch(`${API_URL}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newName })
+        });
+        fetchUsers(); 
+      }
+    }
+
+    // DELETE: Remove a user from your database
+    async function deleteUser(id) {
+      await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      fetchUsers(); 
+    }
+
+    // Load users immediately when the page opens
+    fetchUsers();
+  </script>
+</body>
+</html>
